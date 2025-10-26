@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Welcome</title>
+<style>
+  body {
+    margin: 0;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background: radial-gradient(circle at top, #1e1e2f, #121212);
+    font-family: system-ui, sans-serif;
+    color: white;
+    text-align: center;
+    overflow: hidden;
+  }
+
+  /* Quote / Heading */
+  #heading-container { margin-bottom: 20px; }
+  #heading-container h1 { margin: 0; font-size: 1.8rem; }
+  #heading-container p { margin: 4px 0; font-style: italic; font-size: 1rem; color: rgba(255,255,255,0.8); }
+
+  /* Google Search */
+  #google-search-form {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    margin-bottom: 30px;
+  }
+  #google-search {
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    width: 250px;
+    font-size: 1rem;
+    background: rgba(255,255,255,0.1);
+    color: white;
+  }
+  #google-search::placeholder { color: rgba(255,255,255,0.7); }
+  #google-search-form button {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 8px;
+    background: #4b5aff;
+    color: white;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  #google-search-form button:hover { background: #6271ff; }
+
+  /* Dock */
+  .dock {
+    display: flex;
+    align-items: flex-end;
+    gap: 30px;
+    background: rgba(255,255,255,0.1);
+    padding: 14px 28px;
+    border-radius: 24px;
+    backdrop-filter: blur(14px);
+    transition: background 0.2s ease;
+    margin-bottom: 20px;
+  }
+  .dock:hover { background: rgba(255,255,255,0.15); }
+
+  .dock-item {
+    position: relative;
+    width: 50px;
+    height: 50px;
+    border-radius: 16px;
+    overflow: hidden;
+    cursor: grab;
+    transition: transform 0.1s linear;
+  }
+  .dock-item img {
+    width: 100%;
+    height: 100%;
+    border-radius: 16px;
+    object-fit: cover;
+  }
+
+  .tooltip {
+    position: absolute;
+    bottom: 75px;
+    left: 50%;
+    transform: translateX(-50%) scale(0.9);
+    background: rgba(30,30,30,0.85);
+    color: #fff;
+    font-size: 13px;
+    padding: 5px 10px;
+    border-radius: 10px;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.25s ease;
+  }
+  .dock-item:hover .tooltip {
+    opacity: 1;
+    transform: translateX(-50%) translateY(-4px) scale(1);
+  }
+
+  /* Buttons */
+  #add-btn {
+    background-color: #4caf50;
+    color: white;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    margin-bottom: 30px;
+  }
+  #add-btn:hover { background-color: #5ec863; }
+
+  /* Modal */
+  .modal {
+    position: fixed; top: 0; left: 0;
+    width: 100%; height: 100%;
+    display: none; justify-content: center; align-items: center;
+    background: rgba(0,0,0,0.5);
+    z-index: 1000;
+  }
+  .modal-content {
+    background: #fff; padding: 20px; border-radius: 16px;
+    min-width: 300px; color: black;
+  }
+  .modal-content input {
+    width: 100%; padding: 8px; margin: 8px 0; border-radius: 6px; border: 1px solid #ccc;
+  }
+  .modal-content button {
+    padding: 8px 16px; border: none; border-radius: 8px; cursor: pointer;
+    font-size: 1rem; margin-right: 8px;
+  }
+  #delete-btn { background-color: #ff4d4d; color: white; }
+  #save-btn { background-color: #4b5aff; color: white; }
+  #cancel-btn { background-color: #999; color: white; }
+</style>
+</head>
+<body>
+
+<div id="heading-container">
+  <h1>ある人の現実は別の人の幻想かもしれない</h1>
+  <p id="romaji">Aru hito no genjitsu wa, betsu no hito no gensō dearu kamo shirenai.</p>
+  <p id="translation">One's reality might be another's illusion.</p>
+</div>
+
+<form id="google-search-form" onsubmit="return searchGoogle()">
+  <input type="text" id="google-search" placeholder="Search Google...">
+  <button type="submit">Search</button>
+</form>
+
+<div class="dock" id="dock"></div>
+
+<button id="add-btn" onclick="openModal()">Add Bookmark</button>
+
+<div class="modal" id="modal">
+  <div class="modal-content">
+    <h3 id="modal-title">Add Bookmark</h3>
+    <input type="text" id="bookmark-name" placeholder="Name">
+    <input type="url" id="bookmark-url" placeholder="URL">
+    <div style="margin-top:10px; text-align:right;">
+      <button id="delete-btn" onclick="deleteBookmark()" style="display:none;">Delete</button>
+      <button id="save-btn" onclick="saveBookmark()">Save</button>
+      <button id="cancel-btn" onclick="closeModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let bookmarks = JSON.parse(localStorage.getItem('bookmarks')) || [
+  {name:'WhatsApp', url:'https://web.whatsapp.com/'},
+  {name:'YouTube', url:'https://www.youtube.com/'},
+  {name:'ChatGPT', url:'https://chat.openai.com/'},
+  {name:'Gmail', url:'https://mail.google.com/'},
+  {name:'Movies', url:'https://yomovies.study/'},
+  {name:'PC Games', url:'https://fitgirl-repacks.site/'},
+  {name:'YouTube', url:'https://chat.deepseek.com/'},
+  {name:'YouTube', url:'https://anikai.to/'},
+<!--  {name:'YouTube', url:''}, -->
+<!--  {name:'YouTube', url:''} -->
+];
+let editIndex = null, draggedIndex = null;
+
+function getFavicon(url){ return `https://www.google.com/s2/favicons?sz=128&domain_url=${url}`; }
+function saveToLocalStorage(){ localStorage.setItem('bookmarks', JSON.stringify(bookmarks)); }
+
+function renderDock(){
+  const dock = document.getElementById("dock"); dock.innerHTML = "";
+  bookmarks.forEach((b,i)=>{
+    const a = document.createElement("a");
+    a.href=b.url; a.target="_self"; a.className="dock-item"; a.draggable=true; a.dataset.index=i;
+    a.innerHTML=`<img src="${getFavicon(b.url)}" alt="${b.name}"><div class="tooltip">${b.name}</div>`;
+    a.addEventListener('contextmenu', e=>{ e.preventDefault(); openModal(i); });
+    a.addEventListener("dragstart", ()=>{ draggedIndex=i; });
+    a.addEventListener("dragover", e=> e.preventDefault());
+    a.addEventListener("drop", ()=>{
+      if(draggedIndex===null||i===draggedIndex) return;
+      const d=bookmarks[draggedIndex]; bookmarks.splice(draggedIndex,1); bookmarks.splice(i,0,d);
+      saveToLocalStorage(); renderDock(); draggedIndex=null;
+    });
+    dock.appendChild(a);
+  });
+  addMacOSEffect();
+}
+
+function openModal(index=null){
+  document.getElementById('modal').style.display='flex'; editIndex=index;
+  const deleteBtn=document.getElementById('delete-btn');
+  if(index!==null){
+    const b=bookmarks[index];
+    document.getElementById('bookmark-name').value=b.name;
+    document.getElementById('bookmark-url').value=b.url;
+    document.getElementById('modal-title').innerText='Edit Bookmark';
+    deleteBtn.style.display='inline-block';
+  } else {
+    document.getElementById('bookmark-name').value='';
+    document.getElementById('bookmark-url').value='';
+    document.getElementById('modal-title').innerText='Add Bookmark';
+    deleteBtn.style.display='none';
+  }
+}
+function closeModal(){ document.getElementById('modal').style.display='none'; }
+function saveBookmark(){
+  const name=document.getElementById('bookmark-name').value;
+  const url=document.getElementById('bookmark-url').value;
+  if(!name||!url) return alert('Please enter name and URL');
+  if(editIndex!==null) bookmarks[editIndex]={name,url}; else bookmarks.push({name,url});
+  saveToLocalStorage(); renderDock(); closeModal();
+}
+function deleteBookmark(){ if(editIndex!==null){ bookmarks.splice(editIndex,1); saveToLocalStorage(); renderDock(); closeModal(); } }
+function searchGoogle(){ const q=document.getElementById('google-search').value.trim(); if(q) window.open(`https://www.google.com/search?q=${encodeURIComponent(q)}`,'_blank'); return false; }
+
+function addMacOSEffect(){
+  const dock=document.getElementById('dock'); const items=dock.querySelectorAll(".dock-item");
+  const maxScale=1.8, influence=120; let animFrame;
+  dock.addEventListener("mousemove", e=>{
+    cancelAnimationFrame(animFrame);
+    animFrame=requestAnimationFrame(()=>{
+      const dockRect=dock.getBoundingClientRect(); const mouseX=e.clientX-dockRect.left;
+      items.forEach((item,i)=>{
+        const rect=item.getBoundingClientRect();
+        const itemX=rect.left+rect.width/2-dockRect.left;
+        const distance=Math.abs(mouseX-itemX);
+        const scale=Math.max(1, maxScale - distance/influence);
+        item.style.transform=`scale(${scale}) translateY(${(1-scale)*20}px)`;
+      });
+    });
+  });
+  dock.addEventListener("mouseleave", ()=>{
+    cancelAnimationFrame(animFrame);
+    items.forEach(item=>{ item.style.transform="scale(1) translateY(0)"; });
+  });
+}
+
+renderDock();
+</script>
+</body>
+</html>
