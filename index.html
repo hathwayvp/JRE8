@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Engagement Invitation</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600&family=Poppins:wght@300;400&family=Tiro+Devanagari+Marathi&display=swap" rel="stylesheet">
+
+<style>
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+}
+
+body{
+  font-family:'Poppins',sans-serif;
+  background:#f6f1e8;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  min-height:100vh;
+  padding:15px;
+}
+
+/* ================= CINEMATIC INTRO ================= */
+#intro{
+  position:fixed;
+  inset:0;
+  background:#000;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+  z-index:9999;
+  color:#d4af37;
+  animation:fadeOutIntro 1.5s ease 2.5s forwards;
+}
+
+#intro h1{
+  font-family:'Playfair Display',serif;
+  font-size:22px;
+  opacity:0;
+  animation:fadeInText 2s ease forwards;
+}
+
+#intro p{
+  margin-top:10px;
+  font-size:12px;
+  color:#ccc;
+  opacity:0;
+  animation:fadeInText 2s ease 0.8s forwards;
+}
+
+@keyframes fadeInText{
+  to{opacity:1; transform:translateY(0);}
+  from{opacity:0; transform:translateY(10px);}
+}
+
+@keyframes fadeOutIntro{
+  to{opacity:0; visibility:hidden;}
+}
+
+/* ================= CARD ================= */
+.card{
+  width:100%;
+  max-width:420px;
+  min-height:70vh;
+  background:rgba(255,255,255,0.92);
+  padding:40px 25px;
+  border-radius:18px;
+  border:1px solid #e6d3a3;
+  box-shadow:0 15px 40px rgba(0,0,0,0.12);
+  text-align:center;
+  position:relative;
+  overflow:hidden;
+  display:flex;
+  flex-direction:column;
+
+  transform:scale(0.9);
+  opacity:0;
+  animation:cardReveal 1.2s ease 3s forwards;
+}
+
+/* Zoom + fade reveal */
+@keyframes cardReveal{
+  to{
+    transform:scale(1);
+    opacity:1;
+  }
+}
+
+/* BACKGROUND */
+.invitation-bg{
+  background:
+    linear-gradient(rgba(255,248,235,0.35), rgba(255,248,235,0.35)),
+    url("https://raw.githubusercontent.com/hathwayvp/JRE8/main/Bag.png");
+  background-size:cover;
+  background-position:center;
+  background-repeat:no-repeat;
+}
+
+/* TEXT */
+.title{
+  font-family:'Playfair Display',serif;
+  font-size:14px;
+  color:#8a6a2f;
+  margin-bottom:8px;
+}
+
+.subtitle{
+  font-size:12px;
+  color:#666;
+  margin-bottom:25px;
+}
+
+.names{
+  font-family:'Playfair Display',serif;
+  background:linear-gradient(45deg,#d4af37,#b8962e);
+  -webkit-background-clip:text;
+  color:transparent;
+  margin:20px 0 10px;
+}
+
+.line{
+  width:60px;
+  height:2px;
+  background:#d4af37;
+  margin:15px auto;
+}
+
+.details{
+  color:#555;
+  margin-bottom:25px;
+}
+
+/* VENUE */
+.venue{
+  margin-top:auto;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:6px;
+  color:#666;
+}
+
+/* MAP BUTTON */
+.map-btn{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  padding:8px 14px;
+  font-size:12px;
+  font-weight:500;
+  color:#8a6a2f;
+  text-decoration:none;
+  border:1px solid rgba(212,175,55,0.6);
+  border-radius:20px;
+  background:rgba(212,175,55,0.08);
+  transition:0.25s ease;
+  margin-top:10px;
+}
+
+.map-btn:hover{
+  background:rgba(212,175,55,0.18);
+  transform:translateY(-1px);
+}
+
+/* LANGUAGE */
+.lang-mr{
+  font-family:'Tiro Devanagari Marathi','Poppins',sans-serif;
+}
+
+/* MODAL */
+.modal{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,0.5);
+  backdrop-filter:blur(6px);
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  z-index:999;
+  opacity:0;
+  animation:fadeInModal 0.8s ease 3.2s forwards;
+}
+
+@keyframes fadeInModal{
+  to{opacity:1;}
+}
+
+.modal-box{
+  background:#fff;
+  padding:30px 20px;
+  border-radius:16px;
+  width:90%;
+  max-width:320px;
+  text-align:center;
+}
+
+/* BUTTON */
+.lang-btn{
+  width:100%;
+  padding:14px;
+  margin-top:12px;
+  border-radius:25px;
+  border:1px solid #d4af37;
+  background:none;
+  color:#8a6a2f;
+  cursor:pointer;
+  transition:0.3s;
+}
+
+.lang-btn:hover{
+  background:#d4af37;
+  color:#fff;
+}
+</style>
+</head>
+
+<body>
+
+<!-- CINEMATIC INTRO -->
+<div id="intro">
+  <h1>Vishal ❤️ Shrutika</h1>
+  <p>Invitation is loading...</p>
+</div>
+
+<!-- CARD -->
+<div class="card" id="card">
+
+  <div id="invitationScreen">
+
+    <div class="title" id="title"></div>
+    <div class="subtitle" id="subtitle"></div>
+
+    <div class="names" id="names"></div>
+    <div class="line"></div>
+
+    <div class="details" id="details"></div>
+
+    <div class="venue">
+      <b id="venueName"></b>
+      <span id="venueAddress"></span>
+
+      <a id="venueLink" class="map-btn" target="_blank"></a>
+    </div>
+
+  </div>
+
+</div>
+
+<!-- LANGUAGE MODAL -->
+<div id="languageModal" class="modal">
+  <div class="modal-box">
+    <h2 class="title">Select Language</h2>
+
+    <button class="lang-btn" onclick="setLanguage('en')">English</button>
+    <button class="lang-btn" onclick="setLanguage('mr')">मराठी</button>
+  </div>
+</div>
+
+<script>
+const content={
+en:{
+title:"Together with our family, we invite you",
+subtitle:"A new journey begins…",
+names:"Vishal & Shrutika",
+details:"May 17, 2026 • 5:00 PM",
+venueName:"Deluxe Banquet",
+venueAddress:"Mira Road (E), 401107",
+mapText:"Open in Google Maps"
+},
+mr:{
+title:"आमच्या आयुष्यातील सुंदर क्षण साजरा करण्यासाठी",
+subtitle:"नव्या प्रवासाची सुरुवात…",
+names:"विशाल & श्रुतिका",
+details:"१७ मे २०२६ • सायं. ५:००",
+venueName:"Deluxe Banquet",
+venueAddress:"मिरा रोड (पूर्व), 401107",
+mapText:"Google Maps उघडा"
+}
+};
+
+function setLanguage(lang){
+  const d=content[lang];
+
+  title.innerText=d.title;
+  subtitle.innerText=d.subtitle;
+  names.innerText=d.names;
+  details.innerText=d.details;
+  venueName.innerText=d.venueName;
+  venueAddress.innerText=d.venueAddress;
+
+  venueLink.innerText="📍 " + d.mapText;
+  venueLink.href="https://www.google.com/maps/search/?api=1&query=Deluxe+Banquet+Mira+Road";
+
+  languageModal.style.display="none";
+  card.classList.add("invitation-bg");
+
+  invitationScreen.classList.toggle("lang-mr", lang==="mr");
+}
+
+/* Remove intro after animation */
+setTimeout(()=>{
+  document.getElementById("intro").style.display="none";
+}, 4000);
+</script>
+
+</body>
+</html>
