@@ -202,14 +202,13 @@ document.addEventListener("click", (e) => {
   burstPoint.x = e.clientX;
   burstPoint.y = e.clientY;
   
-  // Triple-click detection on clock card
+  // Triple-click detection on clock card to toggle between digital and analog
   if (e.target.closest(".card")) {
     clickCount++;
     clearTimeout(clickTimeout);
     
     if (clickCount === 3) {
-      currentPosition = (currentPosition + 1) % positions.length;
-      applyPosition(currentPosition);
+      toggleClockType();
       clickCount = 0;
     } else {
       clickTimeout = setTimeout(() => {
@@ -220,20 +219,9 @@ document.addEventListener("click", (e) => {
 });
 
 document.addEventListener("contextmenu", (e) => {
-  // Double right-click detection on clock card
+  // Prevent right-click menu on clock card
   if (e.target.closest(".card")) {
     e.preventDefault();
-    rightClickCount++;
-    clearTimeout(rightClickTimeout);
-    
-    if (rightClickCount === 2) {
-      toggleClockType();
-      rightClickCount = 0;
-    } else {
-      rightClickTimeout = setTimeout(() => {
-        rightClickCount = 0;
-      }, 400);
-    }
   }
 });
 
