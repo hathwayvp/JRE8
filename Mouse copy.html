@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Minimal Particle Clock</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+<style>
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Poppins', sans-serif;
+}
+
+body {
+  height: 100vh;
+  overflow: hidden;
+  background: radial-gradient(circle at center, #0a0a0a, #000);
+  color: #fff;
+}
+
+/* Canvas */
+canvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 0;
+}
+
+/* Card */
+.card {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  padding: 50px 60px;
+  border-radius: 20px;
+
+  background: rgba(255,255,255,0.04);
+  backdrop-filter: blur(18px);
+
+  border: 1px solid rgba(255,255,255,0.08);
+  box-shadow: 0 20px 60px rgba(0,0,0,0.7);
+
+  text-align: center;
+  transition: all 0.5s ease;
+  z-index: 1;
+  user-select: none;
+  cursor: pointer;
+}
+
+/* Analog clock container */
+#analog-clock-container {
+  display: none;
+  text-align: center;
+}
+
+/* Analog clock */
+#analog-clock {
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  border: 3px solid rgba(255,255,255,0.3);
+  position: relative;
+  margin: 0 auto;
+  overflow: visible;
+}
+
+#analog-clock::before {
+  content: '';
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  background: rgba(255,255,255,0.8);
+  border-radius: 50%;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 10;
+}
+
+.hand {
+  position: absolute;
+  bottom: 50%;
+  left: 50%;
+  transform-origin: bottom center;
+  background: rgba(255,255,255,0.8);
+  border-radius: 2px;
+}
+
+.hour-hand {
+  width: 4px;
+  height: 40px;
+  margin-left: -2px;
+}
+
+.minute-hand {
+  width: 3px;
+  height: 55px;
+  margin-left: -1.5px;
+}
+
+.second-hand {
+  width: 2px;
+  height: 60px;
+  margin-left: -1px;
+  background: rgba(255,100,100,0.8);
+}
+
+/* Clock */
+#clock {
+  font-size: 46px;
+  font-weight: 500;
+  letter-spacing: 2px;
+  text-shadow: 0 0 10px rgba(255,255,255,0.2);
+}
+
+/* Date */
+#date {
+  margin-top: 6px;
+  font-size: 13px;
+  opacity: 0.6;
+}
+</style>
+</head>
+
+<body>
+
+<canvas id="canvas"></canvas>
+
+<div class="card">
+  <div id="digital-clock">
+    <div id="clock">00:00</div>
+    <div id="date">Loading...</div>
+  </div>
+  <div id="analog-clock-container">
+    <div id="analog-clock">
+      <div class="hand hour-hand" id="hour-hand"></div>
+      <div class="hand minute-hand" id="minute-hand"></div>
+      <div class="hand second-hand" id="second-hand"></div>
+    </div>
+    <div id="analog-date" style="margin-top: 12px; font-size: 13px; opacity: 0.6;">Loading...</div>
+  </div>
+</div>
+
+<script>
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+/* Mouse */
+let mouse = { x: canvas.width / 2, y: canvas.height / 2 };
+
+document.addEventListener("mousemove", (e) => {
+  mouse.x = e.clientX;
+  mouse.y = e.clientY;
+});
+
+/* States */
+let state = "idle";
+let stateStart = 0;
+let burstPoint = { x: 0, y: 0 };
+
+/* Clock states */
+let isAnalog = false;
+const positions = ["center", "top-left", "top-right", "bottom-left", "bottom-right"];
+let currentPosition = 0;
+let clickCount = 0;
+let clickTimeout;
+let rightClickCount = 0;
+let rightClickTimeout;
+
+const card = document.querySelector(".card");
+
+function applyPosition(posIndex) {
+  const posMap = {
+    "center": { top: "50%", left: "50%", transform: "translate(-50%, -50%)" },
+    "top-left": { top: "20px", left: "20px", transform: "translate(0, 0)" },
+    "top-right": { top: "20px", left: "auto", right: "20px", transform: "translate(0, 0)" },
+    "bottom-left": { bottom: "20px", top: "auto", left: "20px", transform: "translate(0, 0)" },
+    "bottom-right": { bottom: "20px", top: "auto", left: "auto", right: "20px", transform: "translate(0, 0)" }
+  };
+  
+  const pos = posMap[positions[posIndex]];
+  Object.assign(card.style, pos);
+}
+
+function toggleClockType() {
+  isAnalog = !isAnalog;
+  document.getElementById("digital-clock").style.display = isAnalog ? "none" : "block";
+  document.getElementById("analog-clock-container").style.display = isAnalog ? "block" : "none";
+}
+
+document.addEventListener("click", (e) => {
+  state = "burst";
+  stateStart = Date.now();
+  burstPoint.x = e.clientX;
+  burstPoint.y = e.clientY;
+  
+  // Triple-click detection on clock card
+  if (e.target.closest(".card")) {
+    clickCount++;
+    clearTimeout(clickTimeout);
+    
+    if (clickCount === 3) {
+      currentPosition = (currentPosition + 1) % positions.length;
+      applyPosition(currentPosition);
+      clickCount = 0;
+    } else {
+      clickTimeout = setTimeout(() => {
+        clickCount = 0;
+      }, 300);
+    }
+  }
+});
+
+document.addEventListener("contextmenu", (e) => {
+  // Double right-click detection on clock card
+  if (e.target.closest(".card")) {
+    e.preventDefault();
+    rightClickCount++;
+    clearTimeout(rightClickTimeout);
+    
+    if (rightClickCount === 2) {
+      toggleClockType();
+      rightClickCount = 0;
+    } else {
+      rightClickTimeout = setTimeout(() => {
+        rightClickCount = 0;
+      }, 400);
+    }
+  }
+});
+
+/* Drag functionality */
+let isDragging = false;
+let dragOffsetX = 0;
+let dragOffsetY = 0;
+
+card.addEventListener("mousedown", (e) => {
+  // Only start drag if not a right-click or triple-click attempt
+  if (e.button === 0 && clickCount < 2) {
+    isDragging = true;
+    const rect = card.getBoundingClientRect();
+    dragOffsetX = e.clientX - rect.left;
+    dragOffsetY = e.clientY - rect.top;
+    card.style.cursor = "grabbing";
+  }
+});
+
+document.addEventListener("mousemove", (e) => {
+  mouse.x = e.clientX;
+  mouse.y = e.clientY;
+  
+  if (isDragging) {
+    card.style.position = "fixed";
+    card.style.top = (e.clientY - dragOffsetY) + "px";
+    card.style.left = (e.clientX - dragOffsetX) + "px";
+    card.style.transform = "none";
+    card.style.right = "auto";
+    card.style.bottom = "auto";
+    currentPosition = -1; // Reset position tracker
+  }
+});
+
+document.addEventListener("mouseup", () => {
+  isDragging = false;
+  card.style.cursor = "pointer";
+});
+
+/* Particles */
+const PARTICLE_COUNT = Math.min(160, Math.floor(window.innerWidth / 7));
+let particles = [];
+
+for (let i = 0; i < PARTICLE_COUNT; i++) {
+  particles.push({
+    x: Math.random() * canvas.width,
+    y: Math.random() * canvas.height,
+    baseX: Math.random() * canvas.width,
+    baseY: Math.random() * canvas.height,
+    vx: (Math.random() - 0.5) * 0.4,
+    vy: (Math.random() - 0.5) * 0.4
+  });
+}
+
+function drawParticles() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  let now = Date.now();
+  let elapsed = now - stateStart;
+
+  if (state === "burst" && elapsed > 800) {
+    state = "recover";
+    stateStart = now;
+  }
+
+  if (state === "recover" && elapsed > 3200) {
+    state = "idle";
+  }
+
+  for (let i = 0; i < particles.length; i++) {
+    let p = particles[i];
+
+    p.x += p.vx;
+    p.y += p.vy;
+
+    if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
+    if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
+
+    if (state === "idle") {
+      let dx = mouse.x - p.x;
+      let dy = mouse.y - p.y;
+      let dist = Math.sqrt(dx * dx + dy * dy);
+
+      if (dist < 180) {
+        let force = (180 - dist) / 180;
+        p.x += dx * force * 0.02;
+        p.y += dy * force * 0.02;
+      }
+    }
+
+    if (state === "burst") {
+      let dx = p.x - burstPoint.x;
+      let dy = p.y - burstPoint.y;
+      let dist = Math.sqrt(dx * dx + dy * dy);
+
+      if (dist < 200) {
+        let power = (200 - dist) / 200;
+        p.x += dx * power * 0.15;
+        p.y += dy * power * 0.15;
+      }
+    }
+
+    if (state === "recover") {
+      p.x += (p.baseX - p.x) * 0.02;
+      p.y += (p.baseY - p.y) * 0.02;
+    }
+
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 2, 0, Math.PI * 2);
+    ctx.fillStyle = "rgba(255,255,255,0.7)";
+    ctx.fill();
+
+    for (let j = i + 1; j < particles.length; j++) {
+      let p2 = particles[j];
+      let dist2 = Math.hypot(p.x - p2.x, p.y - p2.y);
+
+      if (dist2 < 80) {
+        ctx.strokeStyle = "rgba(255,255,255,0.05)";
+        ctx.beginPath();
+        ctx.moveTo(p.x, p.y);
+        ctx.lineTo(p2.x, p2.y);
+        ctx.stroke();
+      }
+    }
+  }
+
+  requestAnimationFrame(drawParticles);
+}
+
+drawParticles();
+
+/* Clock */
+function updateClock() {
+  const now = new Date();
+
+  let h = now.getHours();
+  let ampm = h >= 12 ? "PM" : "AM";
+
+  h = h % 12 || 12;
+
+  let m = String(now.getMinutes()).padStart(2, "0");
+
+  document.getElementById("clock").textContent = `${h}:${m} ${ampm}`;
+  
+  // Update analog clock if active
+  if (isAnalog) {
+    const hours = now.getHours() % 12;
+    const minutes = now.getMinutes();
+    const seconds = now.getSeconds();
+
+    const secondDegrees = ((seconds / 60) * 360);
+    const minuteDegrees = ((minutes / 60) * 360) + ((seconds / 60) * 6);
+    const hourDegrees = ((hours / 12) * 360) + ((minutes / 60) * 30);
+
+    document.getElementById("second-hand").style.transform = `rotate(${secondDegrees}deg)`;
+    document.getElementById("minute-hand").style.transform = `rotate(${minuteDegrees}deg)`;
+    document.getElementById("hour-hand").style.transform = `rotate(${hourDegrees}deg)`;
+  }
+}
+/* Date */
+function updateDate() {
+  const now = new Date();
+
+  const dateText = now.toLocaleDateString("en-IN", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric"
+  });
+  
+  document.getElementById("date").textContent = dateText;
+  document.getElementById("analog-date").textContent = dateText;
+}
+
+setInterval(updateClock, 1000);
+updateClock();
+updateDate();
+
+/* Resize */
+window.addEventListener("resize", () => {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+});
+</script>
+
+</body>
+</html>
